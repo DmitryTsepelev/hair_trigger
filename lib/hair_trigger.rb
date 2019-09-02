@@ -23,6 +23,7 @@ module HairTrigger
 
     def models
       if defined?(Rails)
+        Zeitwerk::Loader.eager_load_all if Rails.autoloaders.zeitwerk_enabled?
         Rails.application.eager_load!
       else
         Dir[model_path + '/*rb'].each do |model|
@@ -40,13 +41,19 @@ module HairTrigger
 
     def migrator
       version = ActiveRecord::VERSION::STRING
-      if version >= "5.2."
+      if version >= "6.0."
+        migrations = ActiveRecord::MigrationContext.new(migration_path, ActiveRecord::SchemaMigration).migrations
+      elsif version >= "5.2."
         migrations = ActiveRecord::MigrationContext.new(migration_path).migrations
       else # version >= "4.0."
         migrations = ActiveRecord::Migrator.migrations(migration_path)
       end
 
-      ActiveRecord::Migrator.new(:up, migrations)
+      if version >= "6.0."
+        ActiveRecord::Migrator.new(:up, migrations, ActiveRecord::SchemaMigration)
+      else
+        ActiveRecord::Migrator.new(:up, migrations)
+      end
     end
 
     def current_migrations(options = {})
