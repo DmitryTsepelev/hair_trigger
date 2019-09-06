@@ -443,7 +443,7 @@ END;
         sql << <<-SQL
 CREATE FUNCTION #{adapter.quote_table_name(prepared_name)}()
 RETURNS TRIGGER AS $$#{declarations}
-BEGIN
+BEGIN ISOLATION LEVEL READ COMMITTED
         SQL
         if prepared_where && db_version < 90000
           sql << normalize("IF #{prepared_where} THEN", 1)
